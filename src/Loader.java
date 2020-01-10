@@ -5,26 +5,35 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.*;
 import java.io.File;
-import java.text.SimpleDateFormat;
+/*import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.HashMap;*/
 
 public class Loader
 {
-    private static SimpleDateFormat birthDayFormat = new SimpleDateFormat("yyyy.MM.dd");
+    /*private static SimpleDateFormat birthDayFormat = new SimpleDateFormat("yyyy.MM.dd");
     private static SimpleDateFormat visitDateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
 
     private static HashMap<Integer, WorkTime> voteStationWorkTimes = new HashMap<>();
-    private static HashMap<Voter, Integer> voterCounts = new HashMap<>();
+    private static HashMap<Voter, Byte> voterCounts = new HashMap<>();*/
 
     public static void main(String[] args) throws Exception
     {
-        String fileName = "res/data-18M.xml";
+        String fileName = "res/data-M.xml";
 
         System.out.println("Program started...");
 
-        //saxParsing(fileName);
-        domParsing(fileName);
+        long startTime = System.currentTimeMillis();
+
+        saxParsing(fileName);
+        //domParsing(fileName);
+        DBConnection.executeMultiInsert();
+
+        System.out.println("Parsing duration: " + (System.currentTimeMillis() - startTime) + " ms\n");
+
+        startTime = System.currentTimeMillis();
+        DBConnection.printVoterCounts();
+        System.out.println("\nSelect voters query duration: " + (System.currentTimeMillis() - startTime) + " ms\n");
     }
 
     private static void printMemory() {
@@ -49,8 +58,6 @@ public class Loader
         printMemory();
         memoryUsage = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() - memoryUsage;
         System.out.println("Memory usage after SAX parsing, but before printing results: " + memoryUsage + " bytes\n");
-
-        //handler.printVotingResultsSAX();
     }
 
     private static void domParsing(String fileName) throws Exception {
@@ -59,34 +66,19 @@ public class Loader
         long memoryUsage = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         System.out.println("Memory usage before DOM parsing: " + memoryUsage + " bytes\n");
 
-        parseFile(fileName);
+        try {
+            parseFile(fileName);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
 
         System.out.println("DOM parsing ended...");
 
         printMemory();
         memoryUsage = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() - memoryUsage;
         System.out.println("Memory usage after DOM parsing, but before printing results: " + memoryUsage + " bytes\n");
-
-        //printVotingResultsDOM();
     }
-
-   private static void printVotingResultsDOM() {
-       System.out.println("Voting station work times: ");
-       for(Integer votingStation : voteStationWorkTimes.keySet())
-       {
-           WorkTime workTime = voteStationWorkTimes.get(votingStation);
-           System.out.println("\t" + votingStation + " - " + workTime);
-       }
-
-       System.out.println("\nDuplicated voters: ");
-       for(Voter voter : voterCounts.keySet())
-       {
-           Integer count = voterCounts.get(voter);
-           if(count > 1) {
-               System.out.println("\t" + voter + " - " + count);
-           }
-       }
-   }
 
     private static void parseFile(String fileName) throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -94,7 +86,7 @@ public class Loader
         Document doc = db.parse(new File(fileName));
 
         findEqualVoters(doc);
-        fixWorkTimes(doc);
+        //fixWorkTimes(doc);
     }
 
     private static void findEqualVoters(Document doc) throws Exception {
@@ -106,15 +98,13 @@ public class Loader
             NamedNodeMap attributes = node.getAttributes();
 
             String name = attributes.getNamedItem("name").getNodeValue();
-            Date birthDay = birthDayFormat.parse(attributes.getNamedItem("birthDay").getNodeValue());
+            String birthDay = attributes.getNamedItem("birthDay").getNodeValue();
 
-            Voter voter = new Voter(name, birthDay);
-            Integer count = voterCounts.get(voter);
-            voterCounts.put(voter, count == null ? 1 : count + 1);
+            DBConnection.countVoter(name, birthDay);
         }
     }
 
-    private static void fixWorkTimes(Document doc) throws Exception {
+    /*private static void fixWorkTimes(Document doc) throws Exception {
         NodeList visits = doc.getElementsByTagName("visit");
         int visitCount = visits.getLength();
         for(int i = 0; i < visitCount; i++)
@@ -132,5 +122,5 @@ public class Loader
             }
             workTime.addVisitTime(time.getTime());
         }
-    }
+    }*/
 }
