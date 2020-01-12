@@ -9,9 +9,8 @@ public class DBConnection
     private static String dbUser = "root";
     private static String dbPass = "45Norty92";
 
-    private static StringBuilder insertQuery = new StringBuilder();
-
-    private static String errstr;
+    private static PreparedStatement preparedStatement = null;
+    private static Integer counter = 0;
 
     public static Connection getConnection()
     {
@@ -32,8 +31,9 @@ public class DBConnection
                         "name TINYTEXT NOT NULL, " +
                         "birthDate DATE NOT NULL, " +
                         "`count` INT NOT NULL, " +
-                        "PRIMARY KEY(id), " +
-                        "UNIQUE KEY name_date(name(50), birthDate))");
+                        "PRIMARY KEY(id), KEY(name(50)))");
+                connection.setAutoCommit(false);
+                preparedStatement = connection.prepareStatement("INSERT INTO voter_count (name, birthDate, `count`) VALUES (?, ?, ?)");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -42,35 +42,23 @@ public class DBConnection
     }
 
     public static void executeMultiInsert() throws SQLException {
-        String builderQuery = insertQuery.toString();
-        System.out.println("builderQuery.length = " + builderQuery.length());
-        String sqlQuery = "INSERT INTO voter_count(name, birthDate, `count`) " +
-                "VALUES" + builderQuery +
-                " ON DUPLICATE KEY UPDATE `count`=`count` + 1";
-        System.out.println("start: " + sqlQuery + " :end");
-        DBConnection.getConnection().createStatement().execute(sqlQuery);
+        preparedStatement.executeBatch();
+        connection.commit();
     }
 
     public static void countVoter(String name, String birthDay) throws SQLException
     {
         birthDay = birthDay.replace('.', '-');
 
-        insertQuery.append((insertQuery.length() == 0 ? "" : ",") + "('" + name + "', '" + birthDay + "', 1)");
+        preparedStatement.setString(1, name);
+        preparedStatement.setString(2, birthDay);
+        preparedStatement.setInt(3, 1);
+        preparedStatement.addBatch();
+        counter++;
 
-        if (insertQuery.length() > 100000) {
-            new Thread(() ->
-            {
-                try {
-                    executeMultiInsert();
-                } catch (SQLException e) {
-                    errstr = insertQuery.toString();
-                    e.printStackTrace();
-                }
-            }).start();
-
-            System.out.println("insertQuery.length = " + insertQuery.length());
-            insertQuery = new StringBuilder();
-            System.out.println("insertQuery.length after = " + insertQuery.length());
+        if (counter > 40000) {
+            executeMultiInsert();
+            counter = 0;
         }
     }
 

@@ -19,7 +19,8 @@ public class Loader
 
     public static void main(String[] args) throws Exception
     {
-        String fileName = "res/data-1M.xml";
+        String fileName = "res/data-18M.xml";
+        DBConnection.getConnection();
 
         System.out.println("Program started...");
 
@@ -31,9 +32,9 @@ public class Loader
 
         System.out.println("Parsing and inserting duration: " + (System.currentTimeMillis() - startTime) + " ms\n");
 
-        startTime = System.currentTimeMillis();
-        DBConnection.printVoterCounts();
-        System.out.println("\nSelect voters query duration: " + (System.currentTimeMillis() - startTime) + " ms\n");
+//        startTime = System.currentTimeMillis();
+//        DBConnection.printVoterCounts();
+//        System.out.println("\nSelect voters query duration: " + (System.currentTimeMillis() - startTime) + " ms\n");
     }
 
     private static void printMemory() {
