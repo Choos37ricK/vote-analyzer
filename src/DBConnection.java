@@ -11,6 +11,8 @@ public class DBConnection
 
     private static StringBuilder insertQuery = new StringBuilder();
 
+    private static String errstr;
+
     public static Connection getConnection()
     {
         if(connection == null)
@@ -40,9 +42,12 @@ public class DBConnection
     }
 
     public static void executeMultiInsert() throws SQLException {
+        String builderQuery = insertQuery.toString();
+        System.out.println("builderQuery.length = " + builderQuery.length());
         String sqlQuery = "INSERT INTO voter_count(name, birthDate, `count`) " +
-                "VALUES" + insertQuery.toString() +
-                "ON DUPLICATE KEY UPDATE `count`=`count` + 1";
+                "VALUES" + builderQuery +
+                " ON DUPLICATE KEY UPDATE `count`=`count` + 1";
+        System.out.println("start: " + sqlQuery + " :end");
         DBConnection.getConnection().createStatement().execute(sqlQuery);
     }
 
@@ -53,8 +58,19 @@ public class DBConnection
         insertQuery.append((insertQuery.length() == 0 ? "" : ",") + "('" + name + "', '" + birthDay + "', 1)");
 
         if (insertQuery.length() > 100000) {
-            executeMultiInsert();
+            new Thread(() ->
+            {
+                try {
+                    executeMultiInsert();
+                } catch (SQLException e) {
+                    errstr = insertQuery.toString();
+                    e.printStackTrace();
+                }
+            }).start();
+
+            System.out.println("insertQuery.length = " + insertQuery.length());
             insertQuery = new StringBuilder();
+            System.out.println("insertQuery.length after = " + insertQuery.length());
         }
     }
 

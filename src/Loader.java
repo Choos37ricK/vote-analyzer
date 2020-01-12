@@ -19,7 +19,7 @@ public class Loader
 
     public static void main(String[] args) throws Exception
     {
-        String fileName = "res/data-M.xml";
+        String fileName = "res/data-1M.xml";
 
         System.out.println("Program started...");
 
@@ -29,7 +29,7 @@ public class Loader
         //domParsing(fileName);
         DBConnection.executeMultiInsert();
 
-        System.out.println("Parsing duration: " + (System.currentTimeMillis() - startTime) + " ms\n");
+        System.out.println("Parsing and inserting duration: " + (System.currentTimeMillis() - startTime) + " ms\n");
 
         startTime = System.currentTimeMillis();
         DBConnection.printVoterCounts();
@@ -57,7 +57,7 @@ public class Loader
 
         printMemory();
         memoryUsage = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() - memoryUsage;
-        System.out.println("Memory usage after SAX parsing, but before printing results: " + memoryUsage + " bytes\n");
+        System.out.println("Memory usage after SAX parsing: " + memoryUsage + " bytes\n");
     }
 
     private static void domParsing(String fileName) throws Exception {
@@ -77,7 +77,7 @@ public class Loader
 
         printMemory();
         memoryUsage = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() - memoryUsage;
-        System.out.println("Memory usage after DOM parsing, but before printing results: " + memoryUsage + " bytes\n");
+        System.out.println("Memory usage after DOM parsing: " + memoryUsage + " bytes\n");
     }
 
     private static void parseFile(String fileName) throws Exception {
